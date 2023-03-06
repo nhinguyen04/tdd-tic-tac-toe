@@ -1,5 +1,7 @@
 const Screen = require("./screen");
 const Cursor = require("./cursor");
+const ComputerPlayer = require("./computer-player");
+const checkWin = require("./checkwin.js");
 
 class TTT {
 
@@ -17,24 +19,69 @@ class TTT {
     Screen.initialize(3, 3);
     Screen.setGridlines(true);
 
-    // Replace this with real commands
-    Screen.addCommand('t', 'test command (remove)', TTT.testCommand);
+    // commands
+    Screen.addCommand('left', 'move cursor left', this.cursor.left.bind(this.cursor));
+    Screen.addCommand('right', 'move cursor right', this.cursor.right.bind(this.cursor));
+    Screen.addCommand('up', 'move cursor up', this.cursor.up.bind(this.cursor));
+    Screen.addCommand('down', 'move cursor down', this.cursor.down.bind(this.cursor));
+    Screen.addCommand('c', 'set move and play with computer', TTT.setAI.bind(this));
 
+    // places a move at cursor's position
+    Screen.addCommand('space', 'set a move at cursor location', TTT.setMove.bind(this));
     Screen.render();
+    Screen.printCommands();
   }
 
-  // Remove this
-  static testCommand() {
-    console.log("TEST COMMAND");
+  static setMove() {
+    delete Screen.commands['c'];
+    Screen.render();
+    Screen.setGrid(this.cursor.row, this.cursor.col, this.playerTurn);
+
+
+    // alternate turns
+    this._alternateTurns();
+
+    // check winner
+    TTT.checkWinner();
+
+
   }
 
-  static checkWin(grid) {
+  static setAI() {
+    delete Screen.commands['space'];
+    Screen.render();
+    Screen.setGrid(this.cursor.row, this.cursor.col, this.playerTurn);
 
-    // Return 'X' if player X wins
-    // Return 'O' if player O wins
-    // Return 'T' if the game is a tie
-    // Return false if the game has not ended
+    // alternate turns
+    this._alternateTurns();
 
+    // AI turn
+    const move = ComputerPlayer.getSmartMove(Screen.grid, this.playerTurn);
+    Screen.setGrid(move.row, move.col, this.playerTurn);
+
+    this._alternateTurns();
+
+    // check winner
+    TTT.checkWinner();
+
+  }
+
+  _alternateTurns() {
+    if (this.playerTurn === "O") {
+      this.playerTurn = "X";
+    } else {
+      this.playerTurn = "O";
+    }
+  }
+
+  static checkWinner() {
+    const winner = checkWin(Screen.grid);
+    if (!winner) {
+      Screen.render();
+      Screen.printCommands();
+    } else {
+      TTT.endGame(winner);
+    }
   }
 
   static endGame(winner) {
@@ -50,5 +97,6 @@ class TTT {
   }
 
 }
+
 
 module.exports = TTT;
